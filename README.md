@@ -1,42 +1,11 @@
-# Nuxt 3 Minimal Starter
+# HR App
+HR app again, and again
 
-Look at the [nuxt 3 documentation](https://v3.nuxtjs.org) to learn more.
+## Stack
+- MariaDB SQL server
+- Express JS middleware server
+- React Vue 3 client
+- Node JS server
 
-## Setup
-
-Make sure to install the dependencies:
-
-```bash
-# yarn
-yarn install
-
-# npm
-npm install
-
-# pnpm
-pnpm install --shamefully-hoist
-```
-
-## Development Server
-
-Start the development server on http://localhost:3000
-
-```bash
-npm run dev
-```
-
-## Production
-
-Build the application for production:
-
-```bash
-npm run build
-```
-
-Locally preview production build:
-
-```bash
-npm run preview
-```
-
-Checkout the [deployment documentation](https://v3.nuxtjs.org/guide/deploy/presets) for more information.
+## Design
+- Ant Design Vue
