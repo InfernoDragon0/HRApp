@@ -11,7 +11,6 @@ import {Parser} from 'json2csv'
 import multer from 'multer'
 const MySQLStore = mysqlSession(session)
 
-app.use(express.json());
 
 //types, to move away into another file when ready
 export type AccessType = "EMPLOYEE" | "MANAGER" | "HR"
@@ -43,6 +42,7 @@ app.use(session({
 	resave: false,
 	saveUninitialized: false
 }));
+app.use(express.json());
 
 var storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -513,7 +513,43 @@ app.post("/update_profile", async (req, res) => {
         })
     }
     
-  })
+})
+
+//FUNCTIONAL REQUIREMENT 18: UPDATE OWN PROFILE (ADDON: GET PROFILE)
+//[GET] /server-api/get_profile {} [ACCESS_TYPE >= 0]
+app.get("/get_profile", async (req, res) => {
+console.log("so i got " + req.session.user)
+
+if (req.session.user != null) {
+    const pPool = pool.promise();
+
+    //TODO: check which field is null or something
+    const [rows, fields] = await pPool.execute("SELECT name,address,payroll_account from accounts WHERE `account_id` = ?", [req.session.user])
+
+    if ((rows as RowDataPacket[]).length > 0) {
+        console.log("have data here")
+        console.table(rows)
+        res.json({
+            result: "success",
+            message: JSON.stringify(rows)
+        })
+    }
+    else {
+        res.json({
+            result: "failure",
+            message: "no data found"
+        })
+    }
+    
+}
+else {
+    res.json({
+        result: "failure",
+        message: "not logged in"
+    })
+}
+
+})
 
 //FUNCTIONAL REQUIREMENT 19: LOGOUT OF PORTAL
 /** USER TYPE: Employees, Managers and HR Personnel 
