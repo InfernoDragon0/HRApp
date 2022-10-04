@@ -91,6 +91,14 @@
 </template>
 
 <script setup>
+//FUNCTIONAL REQUIREMENT 2: VIEW PERSONAL PAYROLL
+//FUNCTIONAL REQUIREMENT 5: Upload Personal Medical Certificate (MC)
+//FUNCTIONAL REQUIREMENT 6: Viewing of Personal Medical Certificate
+//FUNCTIONAL REQUIREMENT 8: Upload Personal Receipt
+//FUNCTIONAL REQUIREMENT 9: View Personal Receipt
+//FUNCTIONAL REQUIREMENT 11: Downloading of Personal Payroll
+
+
 import { message, Upload } from 'ant-design-vue';
 
     const activeKey = ref("1")

@@ -106,6 +106,37 @@ app.post("/login", async (req, res) => {
             result: "failure"
         });
     }
+}) //TODO: check active status
+
+//access check helper
+app.get("/access_check", async (req, res) => { 
+
+    const pPool = pool.promise();
+
+    if (req.session.user != null) {
+        const [rows, fields] = await pPool.execute("SELECT `access_type` from `accounts` WHERE `account_id` = ?", [req.session.user])
+
+        if ((rows as RowDataPacket[]).length > 0) {
+            console.log("has rows")
+            res.json({
+                result: "success",
+                message: rows[0].access_type
+            });
+        }
+        else {
+            console.log("No account with name found!")
+            res.json({
+                result: "failure"
+            });
+        }
+    }
+    else {
+        res.json({
+            result: "failure",
+            message: "not logged in"
+        });
+    }
+    
 })
 
 /**FUNCTIONAL REQUIREMENT 2: VIEW PERSONAL PAYROLL TODO: UI for FR3
@@ -221,7 +252,7 @@ app.get("/edit_payroll", async (req, res) => {
  * INPUT: after logging into the portal.
  * OUTPUT: can upload mc and receipt, 
  */
-//[POST] /server-api/upload {FILE_TYPE: number, FILE_DATA: any} [ACCESS_TYPE >= 0]
+//[POST] /server-api/upload/:file_type {FILE_TYPE: number, FILE_DATA: any} [ACCESS_TYPE >= 0]
 //@returns message: success
 app.post("/upload/:file_type", async (req, res) => {
     
@@ -455,7 +486,7 @@ app.get("/download_payroll", async (req, res) => {
 })
 
 //FUNCTIONAL REQUIREMENT 16.1: HR will be able to add new Employee and Manager accounts
-//[POST] /server-api/register {USER:string, PASSWORD: string, ACCESS_TYPE: number, NAME: string, ADDRESS: string, PAYROLL_ACCOUNT: string} [ACCESS_TYPE == 2]
+//[POST] /server-api/register {USER:string, PASSWORD: string, ACCESS_TYPE: number, NAME: string, ADDRESS: string, PAYROLL_ACCOUNT: string, ACTIVE: number} [ACCESS_TYPE == 2]
 app.post("/register", async (req, res) => {
     console.log("post register " + JSON.stringify(req.body))
     if (req.session.user != null) {
@@ -464,12 +495,21 @@ app.post("/register", async (req, res) => {
         //check if you are HR(2)
         const [rows, fields] = await pPool.execute("SELECT * from `accounts` WHERE `account_id` = ? ", [req.session.user])
         if (rows[0].access_type == 2) {
-
-            //TODO: bcrypt
-            const [rows2, fields2] = await pPool.execute("INSERT INTO `accounts`(username, password, access_type, address, payroll_account, name) VALUES (?,?,?,?,?,?)", [req.body.user, req.body.password, req.body.access_type, req.body.address, req.body.payroll_account, req.body.name])
-            res.json({
-                result: "success",
-            })
+            const [rows3, fields3] = await pPool.execute("SELECT * from `accounts` WHERE `username` = ?", [req.body.user])
+            if ((rows3 as RowDataPacket[]).length > 0) {
+                res.json({
+                    result: "failure",
+                    message: "user exists already"
+                })
+            }
+            else {
+                //TODO: bcrypt
+                const [rows2, fields2] = await pPool.execute("INSERT INTO `accounts`(username, password, access_type, address, payroll_account, name, active) VALUES (?,?,?,?,?,?,?)", [req.body.user, req.body.password, req.body.access_type, req.body.address, req.body.payroll_account, req.body.name, req.body.active])
+                res.json({
+                    result: "success",
+                })
+            }
+            
         }
         else {
             res.json({
@@ -478,10 +518,6 @@ app.post("/register", async (req, res) => {
             })
         }
     }
-
-    res.json({
-        result: "success"
-      });
 })
 
 //FUNCTIONAL REQUIREMENT 16.2 HR will be able to disable accounts to put them in an inactive state.
@@ -495,8 +531,8 @@ app.post("/set_active", async (req, res) => {
         const [rows, fields] = await pPool.execute("SELECT * from `accounts` WHERE `account_id` = ? ", [req.session.user])
         if (rows[0].access_type == 2) {
 
-            //TODO: check if ACTIVE is 0 (disable) or 1 (enable)
-            const [rows2, fields2] = await pPool.execute("UPDATE `accounts` SET `active` = ? WHERE `account_id` = ?", [req.body.active, req.session.user])
+            //TODO: check if the user is a HR then ignore
+            const [rows2, fields2] = await pPool.execute("UPDATE `accounts` SET `active` = ? WHERE `account_id` = ? AND NOT `access_type` = 2", [req.body.active, req.body.account_id])
 
             res.json({
                 result: "success",
@@ -515,13 +551,36 @@ app.post("/set_active", async (req, res) => {
       });
 })
 
-//FUNCTIONAL REQUIREMENT 17: RESET OWN CREDENTIALS
-/** USER TYPE: Employees, Managers and HR Personnel
+//helper for getting all accounts
+//[GET] /server-api/all_accounts {} [ACCESS_TYPE == 2]
+app.get("/all_accounts", async (req, res) => { 
+
+    const pPool = pool.promise();
+
+    const [rows, fields] = await pPool.execute("SELECT * from `accounts` WHERE `account_id` = ? ", [req.session.user])
+    if (rows[0].access_type == 2) {
+
+        //TODO: check if ACTIVE is 0 (disable) or 1 (enable)
+        const [rows2, fields2] = await pPool.execute("SELECT account_id, username, access_type, active FROM `accounts`") //TODO: kinda dangerous perhaps
+        res.json({
+            result: "success",
+            message: JSON.stringify(rows2)
+        })
+    }
+    else {
+        res.json({
+            result: "failure",
+            message: "not a HR"
+        })
+    }
+})
+
+/** FUNCTIONAL REQUIREMENT 17: RESET OWN CREDENTIALS
+ * USER TYPE: Employees, Managers and HR Personnel
  * INPUT will be able to reset their own passwords.
  * OUTPUT will be able to reset their own passwords.
+ * [POST] /server-api/reset_password {OLD_PASSWORD: string, NEW_PASSWORD: string} [ACCESS_TYPE >= 0]
 */
-
-//[POST] /server-api/reset_password {OLD_PASSWORD: string, NEW_PASSWORD: string} [ACCESS_TYPE >= 0]
 app.post("/reset_password", async (req, res) => {
     if (req.session.user != null) {
         const pPool = pool.promise();
@@ -550,7 +609,6 @@ app.post("/reset_password", async (req, res) => {
         })
     }
   })
-
 
 /**FUNCTIONAL REQUIREMENT 18: UPDATE OWN PROFILE
  * USER TYPE: Employees, Managers and HR Personnel 

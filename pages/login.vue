@@ -21,6 +21,7 @@
 </template>
 
 <script setup>
+//FUNCTIONAL REQUIREMENT 1: LOG INTO PORTAL
     const username = ref("")
     const password = ref("")
     const loginResult = ref("")

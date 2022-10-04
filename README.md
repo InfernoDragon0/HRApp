@@ -37,10 +37,10 @@ HR app again, and again
 - [x] FUNCTIONAL REQUIREMENT 2: VIEW PERSONAL PAYROLL
 - [ ] FUNCTIONAL REQUIREMENT 3: Viewing of Employee’s payroll
 - [ ] FUNCTIONAL REQUIREMENT 4: Editing of Employee’s payroll
-- [ ] FUNCTIONAL REQUIREMENT 5: Upload Personal Medical Certificate (MC)
+- [x] FUNCTIONAL REQUIREMENT 5: Upload Personal Medical Certificate (MC)
 - [x] FUNCTIONAL REQUIREMENT 6: Viewing of Personal Medical Certificate
 - [ ] FUNCTIONAL REQUIREMENT 7: Viewing of Other Employees Medical Certificate
-- [ ] FUNCTIONAL REQUIREMENT 8: Upload Personal Receipt
+- [x] FUNCTIONAL REQUIREMENT 8: Upload Personal Receipt
 - [x] FUNCTIONAL REQUIREMENT 9: View Personal Receipt
 - [ ] FUNCTIONAL REQUIREMENT 10: Viewing of Other Employees Receipts
 - [x] FUNCTIONAL REQUIREMENT 11: Downloading of Personal Payroll
@@ -48,7 +48,7 @@ HR app again, and again
 - [ ] FUNCTIONAL REQUIREMENT 13: Viewing of Job Applicant’s resume
 - [ ] FUNCTIONAL REQUIREMENT 14: Uploading of Job Applicant’s Resume
 - [ ] FUNCTIONAL REQUIREMENT 15: Downloading of Job Applicant’s Resume [NOTE: downloading is client side through the PDF viewer]
-- [ ] FUNCTIONAL REQUIREMENT 16.1: HR will be able to add new Employee and Manager accounts
+- [x] FUNCTIONAL REQUIREMENT 16.1: HR will be able to add new Employee and Manager accounts
 - [ ] FUNCTIONAL REQUIREMENT 16.2: HR will be able to disable accounts to put them in an inactive state.
 - [x] FUNCTIONAL REQUIREMENT 17: RESET OWN CREDENTIALS
 - [x] FUNCTIONAL REQUIREMENT 18: UPDATE OWN PROFILE

@@ -57,6 +57,27 @@
               <ResetPassword/>
             </div>
           </a-tab-pane>
+
+          <template v-if="accessLevel == 2">
+            <a-tab-pane key="4" tab="Register Account">
+              <div :style="{ padding: '24px', background: '#fff', minHeight: '360px' }">
+                <RegisterAccount/>
+              </div>
+            </a-tab-pane>
+
+            <a-tab-pane key="5" tab="Manage Account">
+              <div :style="{ padding: '24px', background: '#fff', minHeight: '360px' }">
+                <ManageAccount/>
+              </div>
+            </a-tab-pane>
+
+            <a-tab-pane key="6" tab="Manage Payroll">
+              <div :style="{ padding: '24px', background: '#fff', minHeight: '360px' }">
+                
+              </div>
+            </a-tab-pane>
+
+          </template>
         </a-tabs>
       </a-layout-content>
     </a-layout>
@@ -65,6 +86,8 @@
 </template>
 
 <script lang="ts">
+
+
 import {
   PieChartOutlined,
   DesktopOutlined,
@@ -93,14 +116,35 @@ export default defineComponent({
 </script>
 
 <script setup lang="ts">
-const router = useRouter();
-const logout = async () => {
-  const { data: message } = await useAsyncData("message", () => {
-    return $fetch("/server-api/logout");
-  });
-  router.push("/login");
-  console.log(message);
-};
+
+    const router = useRouter();
+    const accessLevel = ref(0)//1 for manager, 2 for HR, if you change this manually without changing the server side, you wont get to use the functions
+
+    onMounted(async () => {
+      const { data: access, pending, error, refresh} = await useAsyncData("access", () => $fetch("/server-api/access_check"), {initialCache: false});
+      await refresh()
+
+      console.log(access)
+
+      if ((access.value as any).result == "success") {
+        console.log("access at level " + (access.value as any).message)
+
+        accessLevel.value = (access.value as any).message
+      } 
+      else {
+        console.log("error retrieving access check")
+      }
+    })
+
+    const logout = async () => {
+      const { data: message } = await useAsyncData("message", () => {
+        return $fetch("/server-api/logout");
+      });
+      router.push("/login");
+      console.log(message);
+    };
+
+
 </script>
 
 <style>

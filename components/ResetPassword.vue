@@ -17,7 +17,7 @@
 </template>
 
 <script setup>
-
+//FUNCTIONAL REQUIREMENT 17: RESET OWN CREDENTIALS
     const oldPassword = ref("")
     const newPassword = ref("")
     const editResult = ref("")
