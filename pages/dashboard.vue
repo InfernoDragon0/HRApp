@@ -65,7 +65,7 @@
               </div>
             </a-tab-pane>
 
-            <a-tab-pane key="5" tab="Manage Account">
+            <a-tab-pane key="5" tab="Manage Accounts">
               <div :style="{ padding: '24px', background: '#fff', minHeight: '360px' }">
                 <ManageAccount/>
               </div>
@@ -74,6 +74,11 @@
             <a-tab-pane key="6" tab="Manage Payroll">
               <div :style="{ padding: '24px', background: '#fff', minHeight: '360px' }">
                 
+              </div>
+            </a-tab-pane>
+            <a-tab-pane key="7" tab="Manage Resumes">
+              <div :style="{ padding: '24px', background: '#fff', minHeight: '360px' }">
+                <ManageResumes/>
               </div>
             </a-tab-pane>
 

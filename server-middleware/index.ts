@@ -298,10 +298,10 @@ app.post("/upload/:file_type", async (req, res) => {
 //[GET] /server-api/view_uploads {OTHER_USER?: number, FILE_TYPE: number} [ACCESS_TYPE >= 0 || ACCESS_TYPE == 2]
 //@returns res.send(image) or res.send(pdf)
 app.get("/view_uploads", async (req, res) => {
-    console.log("post upload " + JSON.stringify(req.body))
+    console.log("post upload " + JSON.stringify(req.query))
 
     if (req.session.user != null ) {
-        if (req.body.other_user != null) {
+        if (req.query.other_user != null || req.query.file_type == "2") {
             const pPool = pool.promise();
 
             //check if you are HR(2)
@@ -309,17 +309,25 @@ app.get("/view_uploads", async (req, res) => {
             if (rows[0].access_type == 2) {
                 //TODO: can access others
                 //read everything in the upload file
-                let filelist: string[] = []
+                let filelist: any[] = []
                 fs.readdir("./uploads", (err, files) => {
                     files.forEach(file => {
-                      filelist.push(file); //sends every single persons uploads, then later on group in the client side
+                        if (req.query.file_type == "2") {
+                            var splitted = file.split("_")
+                            if (splitted[1] == "2") {
+                                filelist.push({name: file})
+                            }
+                        }
+                        else {
+                            filelist.push({name: file}); //sends every single persons uploads, then later on group in the client side
+                        }
                     });
+
+                    res.json({
+                        result: "success",
+                        message: JSON.stringify(filelist) //TODO: check if need stringify. sends filename. to request viewing a single opload, use /view_upload
+                    })
                 });
-    
-                res.json({
-                    result: "success",
-                    message: JSON.stringify(filelist) //TODO: check if need stringify. sends filename. to request viewing a single opload, use /view_upload
-                })
             }
             else {
                 res.json({
@@ -546,9 +554,6 @@ app.post("/set_active", async (req, res) => {
         }
     }
 
-    res.json({
-        result: "success"
-      });
 })
 
 //helper for getting all accounts
