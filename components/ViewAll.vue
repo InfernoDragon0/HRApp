@@ -24,22 +24,17 @@
         <a-typography-title>Your Medical Certificates</a-typography-title>
         <a-space direction="vertical">
             <a-typography-text type="secondary">Here you can view your medical certificates, and upload new ones</a-typography-text>
-            <a-form @finish="onFinishMC" @finishFailed="onFinishMC">
-                <a-form-item name="data" label="Upload">
-                    <a-upload
-                        v-model:file-list="mcFileList"
-                        name="file_data"
-                        :before-upload="beforeUpload"
-                        accept=".png,.jpg,.jpeg"
-                        @change="handleChange"
-                    >
-                        <a-button><upload-outlined/> Upload MC </a-button>
-                    </a-upload>
-                </a-form-item>
-                <a-form-item>
-                    <a-button type="primary" html-type="submit">Submit</a-button>
-                </a-form-item>
-            </a-form>
+                <a-upload
+                    v-model:file-list="mcFileList"
+                    name="file_data"
+                    :before-upload="beforeUpload"
+                    accept=".png,.jpg,.jpeg"
+                    action="/server-api/upload/0"
+                    @change="handleChange"
+                >
+                    <a-button><upload-outlined/> Upload MC </a-button>
+                </a-upload>
+                
 
         </a-space>
         <a-table :columns="columnsMc" :data-source="mcData">
@@ -164,6 +159,7 @@ import { message, Upload } from 'ant-design-vue';
     ])
 
     const selectedPayroll = ref({})
+
     //to view payroll, MC, and receipts
     onMounted(async () => {
         //FUNCTIONAL REQUIREMENT 2: VIEW PERSONAL PAYROLL
@@ -173,7 +169,11 @@ import { message, Upload } from 'ant-design-vue';
         if (payroll.value.result == "success") {
             payrollData.value = JSON.parse(payroll.value.message)
         }
+        requestMCData()
+        requestReceiptData()
+    })
 
+    const requestMCData = async () => {
         //FUNCTIONAL REQUIREMENT 6: Viewing of Personal Medical Certificate
         const {data: mc, pending: mcpending, error: mcerror, refresh: refresh2} = await useAsyncData('mc', () => $fetch('/server-api/view_uploads?file_type=0'), {initialCache: false})
 
@@ -181,7 +181,9 @@ import { message, Upload } from 'ant-design-vue';
         if (mc.value.result == "success") {
             mcData.value = JSON.parse(mc.value.message)
         }
+    }
 
+    const requestReceiptData = async () => {
         //FUNCTIONAL REQUIREMENT 9: View Personal Receipt
         const {data: receipt, pending: rpending, error: rerror, refresh: refresh3} = await useAsyncData('receipt', () => $fetch('/server-api/view_uploads?file_type=1'), {initialCache: false})
 
@@ -189,7 +191,7 @@ import { message, Upload } from 'ant-design-vue';
         if (receipt.value.result == "success") {
             receiptData.value = JSON.parse(receipt.value.message)
         }
-    })
+    }
 
     const handleOk = (e) => {
       visible.value = false
@@ -214,7 +216,7 @@ import { message, Upload } from 'ant-design-vue';
         document.body.removeChild(element);
 
     }
-    //TODO: the file upload is not done yet
+
     //FUNCTIONAL REQUIREMENT 5: Upload Personal Medical Certificate (MC)
     //FUNCTIONAL REQUIREMENT 8: Upload Personal Receipt
     const handleChange = (info) => {
@@ -223,11 +225,13 @@ import { message, Upload } from 'ant-design-vue';
       }
       if (info.file.status === 'done') {
         message.success(`${info.file.name} file uploaded successfully`);
+        requestMCData()
+        requestReceiptData()
       } else if (info.file.status === 'error') {
         message.error(`${info.file.name} file upload failed.`);
       }
     }
-    const beforeUpload = file => {
+    const beforeUpload = file => { //TODO: update for PNG JPG JPEG
       const isPNG = file.type === 'image/png';
       if (!isPNG) {
         message.error(`${file.name} is not a png file`);

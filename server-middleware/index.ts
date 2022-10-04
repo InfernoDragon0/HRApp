@@ -56,7 +56,7 @@ var storage = multer.diskStorage({
       cb(null, './uploads')
     },
     filename: function (req, file, cb) {
-      cb(null, req.session.user + "_" + req.body.file_type + "_" + file.originalname + "_" + Date.now())
+      cb(null, req.session.user + "_" + req.params.file_type + "_" + Date.now() + "_" + file.originalname)
     }
 })
 //pls do not app.use the multer, or every single request enables uploading, use only as middleware
@@ -223,10 +223,11 @@ app.get("/edit_payroll", async (req, res) => {
  */
 //[POST] /server-api/upload {FILE_TYPE: number, FILE_DATA: any} [ACCESS_TYPE >= 0]
 //@returns message: success
-app.get("/upload", async (req, res) => {
+app.post("/upload/:file_type", async (req, res) => {
     
-    if (req.body.user != null) { 
+    if (req.session.user != null) { 
         upload.single('file_data')(req, res, err => {
+            console.log("uploadingggg")
             //employees and managers
             if (err) {
                 //TODO: store these files securely? wad kind of file was uploaded?
