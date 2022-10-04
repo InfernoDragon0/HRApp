@@ -49,7 +49,7 @@ HR app again, and again
 - [ ] FUNCTIONAL REQUIREMENT 14: Uploading of Job Applicant’s Resume
 - [ ] FUNCTIONAL REQUIREMENT 15: Downloading of Job Applicant’s Resume [NOTE: downloading is client side through the PDF viewer]
 - [x] FUNCTIONAL REQUIREMENT 16.1: HR will be able to add new Employee and Manager accounts
-- [ ] FUNCTIONAL REQUIREMENT 16.2: HR will be able to disable accounts to put them in an inactive state.
+- [x] FUNCTIONAL REQUIREMENT 16.2: HR will be able to disable accounts to put them in an inactive state.
 - [x] FUNCTIONAL REQUIREMENT 17: RESET OWN CREDENTIALS
 - [x] FUNCTIONAL REQUIREMENT 18: UPDATE OWN PROFILE
 - [x] FUNCTIONAL REQUIREMENT 19: LOGOUT OF PORTAL
