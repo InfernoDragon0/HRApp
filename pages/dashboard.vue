@@ -1,4 +1,5 @@
 <template>
+<div>
   <a-layout style="min-height: 100vh">
     <a-layout-sider v-model:collapsed="collapsed" collapsible>
       <div class="logo" />
@@ -7,7 +8,7 @@
           <pie-chart-outlined />
           <span>Dashboard</span>
         </a-menu-item>
-        
+
         <a-sub-menu key="sub1">
           <template #title>
             <span>
@@ -30,21 +31,37 @@
         </a-menu-item>
       </a-menu>
     </a-layout-sider>
-    
-    <a-layout>
-      <a-layout-header style="background: #fff; padding: 0" />
-      <a-layout-content style="margin: 0 16px">
-        <a-breadcrumb style="margin: 16px 0">
-          <a-breadcrumb-item>User</a-breadcrumb-item>
-          <a-breadcrumb-item>Bill</a-breadcrumb-item>
-        </a-breadcrumb>
-        <div :style="{ padding: '24px', background: '#fff', minHeight: '360px' }">
-          <EditProfile/>
-        </div>
-      </a-layout-content>
 
+    <a-layout>
+      <a-layout-content style="margin: 0 16px">
+        <a-tabs v-model:activeKey="activeKey">
+
+          <a-tab-pane key="1" tab="View Details">
+            <div
+              :style="{
+                padding: '24px',
+                background: '#fff',
+                minHeight: '360px',
+              }"
+            >
+              <ViewAll />
+            </div>
+          </a-tab-pane>
+          <a-tab-pane key="2" tab="Edit Profile" force-render>
+            <div :style="{ padding: '24px', background: '#fff', minHeight: '360px' }">
+              <EditProfile/>
+            </div>
+          </a-tab-pane>
+          <a-tab-pane key="3" tab="Reset Password">
+            <div :style="{ padding: '24px', background: '#fff', minHeight: '360px' }">
+              <ResetPassword/>
+            </div>
+          </a-tab-pane>
+        </a-tabs>
+      </a-layout-content>
     </a-layout>
   </a-layout>
+  </div>
 </template>
 
 <script lang="ts">
@@ -55,8 +72,8 @@ import {
   TeamOutlined,
   FileOutlined,
   LogoutOutlined,
-} from '@ant-design/icons-vue';
-import { defineComponent, ref } from 'vue';
+} from "@ant-design/icons-vue";
+import { defineComponent, ref } from "vue";
 export default defineComponent({
   components: {
     PieChartOutlined,
@@ -69,22 +86,21 @@ export default defineComponent({
   data() {
     return {
       collapsed: ref<boolean>(false),
-      selectedKeys: ref<string[]>(['1']),
+      selectedKeys: ref<string[]>(["1"]),
     };
   },
 });
 </script>
 
 <script setup lang="ts">
-
-    const router = useRouter();
-    const logout = async () => {
-        const {data: message} = await useAsyncData('message', () => {
-            return $fetch('/server-api/logout')
-        })
-        router.push('/login');
-        console.log(message)
-    }
+const router = useRouter();
+const logout = async () => {
+  const { data: message } = await useAsyncData("message", () => {
+    return $fetch("/server-api/logout");
+  });
+  router.push("/login");
+  console.log(message);
+};
 </script>
 
 <style>
@@ -97,7 +113,7 @@ export default defineComponent({
 .site-layout .site-layout-background {
   background: #fff;
 }
-[data-theme='dark'] .site-layout .site-layout-background {
+[data-theme="dark"] .site-layout .site-layout-background {
   background: #141414;
 }
 </style>

@@ -9,8 +9,14 @@ import session from 'express-session';
 import mysqlSession from 'express-mysql-session'
 import {Parser} from 'json2csv'
 import multer from 'multer'
+import path from 'path'
 const MySQLStore = mysqlSession(session)
 
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 //types, to move away into another file when ready
 export type AccessType = "EMPLOYEE" | "MANAGER" | "HR"
@@ -44,6 +50,7 @@ app.use(session({
 }));
 app.use(express.json());
 
+//multer for image and pdf storage
 var storage = multer.diskStorage({
     destination: function (req, file, cb) {
       cb(null, './uploads')
@@ -55,7 +62,7 @@ var storage = multer.diskStorage({
 //pls do not app.use the multer, or every single request enables uploading, use only as middleware
 var upload = multer({ storage: storage })
 
-//send user data here
+//send user data here TODO: remove or smth
 app.get("/dashboard", (req, res) => {
     if (!req.session.user) {
         console.log("user not logged in")
@@ -72,14 +79,12 @@ app.get("/dashboard", (req, res) => {
     })
 })
 
-
-
-//FUNCTIONAL REQUIREMENT 1: LOG INTO PORTAL
-/** USER TYPE: Employees, Managers and HR Personnel 
+/** FUNCTIONAL REQUIREMENT 1: LOG INTO PORTAL
+ * USER TYPE: Employees, Managers and HR Personnel 
  * INPUT: will enter their email address and password into the login page on the web portal and 
  * OUTPUT: subsequently gain access to the HR portal.
+ * [POST] /server-api/login {USER: string, PASSWORD: string} [ACCESS_TYPE >= 0]
 */
-//[POST] /server-api/login {USER: string, PASSWORD: string} [ACCESS_TYPE >= 0]
 app.post("/login", async (req, res) => { 
     console.log("post login " + JSON.stringify(req.body))
 
@@ -103,15 +108,13 @@ app.post("/login", async (req, res) => {
     }
 })
 
-//FUNCTIONAL REQUIREMENT 2: VIEW PERSONAL PAYROLL
-//FUNCTIONAL REQUIREMENT 3: Viewing of Employee’s payroll
-/** USER TYPE: Employees, Managers and HR Personnel 
+/**FUNCTIONAL REQUIREMENT 2: VIEW PERSONAL PAYROLL TODO: UI for FR3
+ * FUNCTIONAL REQUIREMENT 3: Viewing of Employee’s payroll 
+ * USER TYPE: Employees, Managers and HR Personnel 
  * INPUT: after logging into the portal.
  * OUTPUT: can view each of their personal payroll, 
+ * [GET] /server-api/view_payroll_all {OTHER_USER?: number} [ACCESS_TYPE >= 0 || ACCESS_TYPE == 2]
  */
-
-//[GET] /server-api/view_payroll_all {OTHER_USER?: number} [ACCESS_TYPE >= 0 || ACCESS_TYPE == 2]
-//@returns message: all rows if success
 app.get("/view_payroll_all", async (req, res) => {
     
     if (req.session.user != null) { 
@@ -211,12 +214,6 @@ app.get("/edit_payroll", async (req, res) => {
     
 })
 
-app.get("/", (req, res) => {
-    res.json({
-        message: "",
-    })
-})
-
 //FUNCTIONAL REQUIREMENT 5: Upload Personal Medical Certificate (MC)
 //FUNCTIONAL REQUIREMENT 8: Upload Personal Receipt
 //FUNCTIONAL REQUIREMENT 14: Uploading of Job Applicant’s Resume
@@ -300,55 +297,116 @@ app.get("/view_uploads", async (req, res) => {
             }
         }
         else {
-            let filelist: string[] = []
-            fs.readdir("./uploads", (err, files) => {
+            let filelist: any[] = []
+            await fs.readdir("./uploads", (err, files) => {
+                if (err) {
+                    console.log("error received " + err)
+                    res.json({
+                        result: "failure",
+                        message: err
+                    })
+                }
                 files.forEach(file => {
-                    var value = file.indexOf(req.session.user);
-                    var check = req.session.user + "" //TODO: probably need a better way? maybe?
-                    if (value != -1 && value < check.length)
-                        filelist.push(file);
+                    var splitted = file.split("_")
+                    var check = splitted[0] == req.session.user
+                    var check2 = splitted[1] == req.query.file_type
+
+                    if (check && check2) {
+                        console.log("pushing " + file)
+                        filelist.push({name: file});
+                    }
                 });
+                res.json({
+                    result: "success",
+                    message: JSON.stringify(filelist) //TODO: check if need stringify
+                })
             });
 
-            res.json({
-                result: "success",
-                message: JSON.stringify(filelist) //TODO: check if need stringify
-            })
+            
         }
         
     }
-
-    res.json({
-        result: "success"
-      });
 })
 
-//FUNCTIONAL REQUIREMENT 11: Downloading of Personal Payroll
-//FUNCTIONAL REQUIREMENT 12: Downloading of Other Employees’ Payroll
-/** USER TYPE: Employees, Managers and HR Personnel 
+//[GET] /server-api/view_uploads_single {OTHER_USER?: number, FILE_NAME: string} [ACCESS_TYPE >= 0 || ACCESS_TYPE == 2]
+app.get("/view_uploads_single", async (req, res) => {
+    console.log("post upload " + JSON.stringify(req.query))
+
+    if (req.session.user != null ) {
+        if (req.query.other_user != null) {
+            const pPool = pool.promise();
+
+            //check if you are HR(2)
+            const [rows, fields] = await pPool.execute("SELECT * from `accounts` WHERE `account_id` = ?", [req.session.user])
+            if (rows[0].access_type == 2) {
+                //TODO: can access others
+                //read everything in the upload file
+                if (fs.existsSync("./uploads/" + req.query.file_name)) {
+                    var splitted = (req.query.file_name as string).split("_")
+                    var check = splitted[0] == req.query.other_user
+                    res.sendFile("./uploads/" + req.query.file_name)
+                }
+                else {
+                    res.json({
+                        result: "failure",
+                        message: "not exist" //not exist
+                    })
+                }
+            }
+            else {
+                res.json({
+                    result: "failure",
+                    message: "not a HR"
+                })
+            }
+        }
+        else {
+            if (fs.existsSync("./uploads/" + req.query.file_name)) {
+                    console.log("file exists")
+                    var splitted = (req.query.file_name as string).split("_")
+                    var check = splitted[0] == req.session.user
+                    res.sendFile(path.join(__dirname,"../../uploads/" + req.query.file_name), (err) => { //TODO: this should only be for dev version? ../../
+                        console.log(err)
+                    })
+            }
+            else {
+                res.json({
+                    result: "failure",
+                    message: "not exist" //not exist or not allowed to view
+                })
+            }
+        }
+        
+    }
+})
+
+/** FUNCTIONAL REQUIREMENT 11: Downloading of Personal Payroll //TODO: FR12 UI
+ * FUNCTIONAL REQUIREMENT 12: Downloading of Other Employees’ Payroll
+ * USER TYPE: Employees, Managers and HR Personnel 
  * INPUT: after logging into the portal.
  * OUTPUT: can download their own personal payroll, 
+ * [POST] /server-api/download_payroll {OTHER_USER?: number, PAYROLL_ID: number} [ACCESS_TYPE >= 0 || ACCESS_TYPE == 2]
+ * @returns message: all rows if success
  */
-
-//[GET] /server-api/download_payroll {OTHER_USER?: number, PAYROLL_ID: number} [ACCESS_TYPE >= 0 || ACCESS_TYPE == 2]
-//@returns message: all rows if success
 app.get("/download_payroll", async (req, res) => {
     
     if (req.session.user != null) { 
         const pPool = pool.promise();
         //employees and managers
-        if (req.body.other_user != null) {
+        if (req.query.other_user != null) {
             //check if HR(2)
             const [rows1, fields1] = await pPool.execute("SELECT * from `accounts` WHERE `account_id` = ?", [req.session.user])
             if ((rows1 as RowDataPacket[]).length > 0) {
-                console.log("has rows")
+                console.log("sending download")
 
                 if (rows1[0].access_type == 2) {
-                    const [rows2, fields2] = await pPool.execute("SELECT * from `payroll` WHERE `account_id` = ? AND `payroll_id` = ?", [req.body.other_user, req.body.payroll_id])
-                    res.json({
-                        result: "success",
-                        message: JSON.stringify(rows2) //TODO: 
-                    });
+                    const [rows2, fields2] = await pPool.execute("SELECT * from `payroll` WHERE `account_id` = ? AND `payroll_id` = ?", [req.query.other_user, req.query.payroll_id])
+                    
+                    res.setHeader('Content-disposition', 'attachment; filename= payroll' + rows1[0].payroll_id + '.json');
+                    res.setHeader('Content-type', 'application/json');
+                    res.write(JSON.stringify(rows2), (err) => {
+                        res.end();
+                    })
                 }
                 else {
                     res.json({
@@ -360,15 +418,21 @@ app.get("/download_payroll", async (req, res) => {
         }
 
         else { 
-            const [rows, fields] = await pPool.execute("SELECT * from `payroll` WHERE `account_id` = ? AND `payroll_id` = ?", [req.session.user, req.body.payroll_id])
+            const [rows, fields] = await pPool.execute("SELECT * from `payroll` WHERE `account_id` = ? AND `payroll_id` = ?", [req.session.user, req.query.payroll_id])
 
             if ((rows as RowDataPacket[]).length > 0) {
-                console.log("has rows")
+                console.log("sending download")
 
-                res.json({
-                    result: "success",
-                    message: JSON.stringify(rows) //TODO: we convert this into a file, or we convert this data to a file in the client side
-                });
+                res.setHeader('Content-disposition', 'attachment; filename= payroll' + rows[0].payroll_id + '.json');
+                    res.setHeader('Content-type', 'application/json');
+                    res.write(JSON.stringify(rows), (err) => {
+                        res.end();
+                    })
+
+                // res.json({
+                //     result: "success",
+                //     message: JSON.stringify(rows) //TODO: we convert this into a file, or we convert this data to a file in the client side
+                // });
             }
             else {
                 console.log("No account with name found!")
@@ -487,20 +551,23 @@ app.post("/reset_password", async (req, res) => {
   })
 
 
-//FUNCTIONAL REQUIREMENT 18: UPDATE OWN PROFILE
-/** USER TYPE: Employees, Managers and HR Personnel 
+/**FUNCTIONAL REQUIREMENT 18: UPDATE OWN PROFILE
+ * USER TYPE: Employees, Managers and HR Personnel 
  * INPUT: by changing information such as their address, payroll account, etc..
  * OUTPUT: will be able to update their profile 
+ * [POST] /server-api/update_profile {NAME?: string, ADDRESS?: string, PAYROLL_ACCOUNT?: string} [ACCESS_TYPE >= 0]
 */
-//[POST] /server-api/update_profile {NAME?: string, ADDRESS?: string, PAYROLL_ACCOUNT?: string} [ACCESS_TYPE >= 0]
 app.post("/update_profile", async (req, res) => {
     console.log("post update profile " + JSON.stringify(req.body))
 
     if (req.session.user != null) {
         const pPool = pool.promise();
+        let name = req.body.name
+        let address = req.body.address
+        let payroll_account = req.body.payroll_account 
 
         //TODO: check which field is null or something
-        const [rows, fields] = await pPool.execute("UPDATE `accounts` SET `name` = ?, `address` = ?, `payroll_account` = ? WHERE `account_id` = ?", ["das", "asd", "Asd", req.session.user])
+        const [rows, fields] = await pPool.execute("UPDATE `accounts` SET `name` = ?, `address` = ?, `payroll_account` = ? WHERE `account_id` = ?", [name, address, payroll_account, req.session.user])
 
         res.json({
             result: "success",
@@ -515,8 +582,9 @@ app.post("/update_profile", async (req, res) => {
     
 })
 
-//FUNCTIONAL REQUIREMENT 18: UPDATE OWN PROFILE (ADDON: GET PROFILE)
-//[GET] /server-api/get_profile {} [ACCESS_TYPE >= 0]
+/**FUNCTIONAL REQUIREMENT 18: UPDATE OWN PROFILE (ADDON: GET PROFILE)
+ * [GET] /server-api/get_profile {} [ACCESS_TYPE >= 0]
+*/
 app.get("/get_profile", async (req, res) => {
 console.log("so i got " + req.session.user)
 
@@ -551,13 +619,12 @@ else {
 
 })
 
-//FUNCTIONAL REQUIREMENT 19: LOGOUT OF PORTAL
-/** USER TYPE: Employees, Managers and HR Personnel 
+/** FUNCTIONAL REQUIREMENT 19: LOGOUT OF PORTAL
+* USER TYPE: Employees, Managers and HR Personnel 
  * INPUT: of the portal will be able to log out of their account,
  * OUTPUT:  terminating the login session.
+ * [GET] /server-api/logout {} [ACCESS_TYPE >= 0]
  */
-
-//[GET] /server-api/logout {} [ACCESS_TYPE >= 0]
 app.get("/logout", (req, res) => {
     //clear all the session stuff here
     req.session.user = null

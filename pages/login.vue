@@ -1,6 +1,5 @@
 <template>
     <div>
-
         <a-divider>Login</a-divider>
 
         <a-form name="basic" :label-col="{ span: 8 }" :wrapper-col="{ span: 8 }" autocomplete="off" >
@@ -22,7 +21,6 @@
 </template>
 
 <script setup>
-
     const username = ref("")
     const password = ref("")
     const loginResult = ref("")
@@ -30,23 +28,22 @@
 
     const login = async () => {
 
-        const {data: message} = await useAsyncData('message', () => {
+        const {data: message} = await useAsyncData('message', () => 
             $fetch('/server-api/login', {
                 method: 'POST',
                 body: {
                     user: username.value,
                     pass: password.value
                 }
-            }).then(dataEmitted => {
-                if (dataEmitted.result == "success") {
-                    router.push('/dashboard');
-                }
-                else {
-                    loginResult.value = "Error occurred logging in, please try again"
-                }
-            })
-        })
+            }), {initialCache: false}
+        )
 
+        if (message.value.result == "success") {
+                router.push('/dashboard');
+        }
+        else {
+            loginResult.value = "Error occurred logging in, please try again"
+        }
         console.log(message)
 
     }
