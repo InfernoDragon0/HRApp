@@ -8,23 +8,6 @@
           <pie-chart-outlined />
           <span>Dashboard</span>
         </a-menu-item>
-
-        <a-sub-menu key="sub1">
-          <template #title>
-            <span>
-              <user-outlined />
-              <span>Your Files</span>
-            </span>
-          </template>
-          <a-menu-item key="3">Payroll</a-menu-item>
-          <a-menu-item key="4">Medical Certificates</a-menu-item>
-          <a-menu-item key="5">Receipts</a-menu-item>
-        </a-sub-menu>
-
-        <a-menu-item key="9">
-          <logout-outlined />
-          <span>Edit Profile</span>
-        </a-menu-item>
         <a-menu-item key="10" @click="logout">
           <logout-outlined />
           <span>Logout</span>
@@ -67,15 +50,12 @@
 
             <a-tab-pane key="5" tab="Manage Accounts">
               <div :style="{ padding: '24px', background: '#fff', minHeight: '360px' }">
-                <ManageAccount/>
+                <ManageAccount @view-account="viewAccount"/>
+                <a-divider/>
+                <ViewEmployees :userid="userId"/>
               </div>
             </a-tab-pane>
 
-            <a-tab-pane key="6" tab="Manage Payroll">
-              <div :style="{ padding: '24px', background: '#fff', minHeight: '360px' }">
-                
-              </div>
-            </a-tab-pane>
             <a-tab-pane key="7" tab="Manage Resumes">
               <div :style="{ padding: '24px', background: '#fff', minHeight: '360px' }">
                 <ManageResumes/>
@@ -124,6 +104,7 @@ export default defineComponent({
 
     const router = useRouter();
     const accessLevel = ref(0)//1 for manager, 2 for HR, if you change this manually without changing the server side, you wont get to use the functions
+    const userId = ref(0)
 
     onMounted(async () => {
       const { data: access, pending, error, refresh} = await useAsyncData("access", () => $fetch("/server-api/access_check"), {initialCache: false});
@@ -137,7 +118,8 @@ export default defineComponent({
         accessLevel.value = (access.value as any).message
       } 
       else {
-        console.log("error retrieving access check")
+        console.log("error retrieving access check, may be not logged in")
+        router.push("/login");
       }
     })
 
@@ -149,6 +131,10 @@ export default defineComponent({
       console.log(message);
     };
 
+    const viewAccount = async (data) => {
+        console.log("received an event " + data)
+        userId.value = data
+    }
 
 </script>
 

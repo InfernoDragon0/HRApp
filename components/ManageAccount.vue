@@ -9,6 +9,8 @@
                         <a @click="enableAccount(record, 1)">Enable</a>
                         <a-divider type="vertical" />
                         <a @click="enableAccount(record, 0)">Disable</a>
+                        <a-divider type="vertical" />
+                        <a @click="viewAccount(record)">View Details</a>
                     </span>
                 </template>
             </template>
@@ -25,6 +27,7 @@
     const accountData = ref ([])
     const manageResult = ref("")
     const visible = ref(false)
+    const emit = defineEmits(["viewAccount"])
 
     const columns = ref([
         {
@@ -97,6 +100,10 @@
 
     const handleOk = (e) => {
       visible.value = false
+    }
+
+    const viewAccount = async (record) => {
+        emit('viewAccount', record)
     }
     
     

@@ -151,14 +151,14 @@ app.get("/view_payroll_all", async (req, res) => {
     if (req.session.user != null) { 
         const pPool = pool.promise();
         //employees and managers
-        if (req.body.other_user != null) {
+        if (req.query.other_user != null) {
             //check if HR(2)
             const [rows1, fields1] = await pPool.execute("SELECT * from `accounts` WHERE `account_id` = ?", [req.session.user])
             if ((rows1 as RowDataPacket[]).length > 0) {
                 console.log("has rows")
 
                 if (rows1[0].access_type == 2) {
-                    const [rows2, fields2] = await pPool.execute("SELECT * from `payroll` WHERE `account_id` = ?", [req.body.other_user])
+                    const [rows2, fields2] = await pPool.execute("SELECT * from `payroll` WHERE `account_id` = ?", [req.query.other_user])
                     res.json({
                         result: "success",
                         message: JSON.stringify(rows2) //TODO: do we send all the data over?client side will store all the payroll this way
@@ -208,9 +208,9 @@ app.get("/view_payroll_all", async (req, res) => {
  * OUTPUT: amendments to the payrolls.
  */
 
-//[GET] /server-api/view_payroll_all {OTHER_USER: number, NEW_AMOUNT: number} [ACCESS_TYPE == 2]
+//[POST] /server-api/view_payroll_all {OTHER_USER: number, NEW_AMOUNT: number, PAYROLL_ID: number} [ACCESS_TYPE == 2]
 //@returns result: success if succeeded
-app.get("/edit_payroll", async (req, res) => {
+app.post("/edit_payroll", async (req, res) => {
     
     if (req.session.user != null) { 
         const pPool = pool.promise();
@@ -222,7 +222,7 @@ app.get("/edit_payroll", async (req, res) => {
                 console.log("has rows")
 
                 if (rows1[0].access_type == 2) {
-                    const [rows2, fields2] = await pPool.execute("UPDATE `payroll` SET `amount` = ? WHERE `account_id` = ?", [req.body.new_amount, req.body.other_user])
+                    const [rows2, fields2] = await pPool.execute("UPDATE `payroll` SET `amount` = ? WHERE `account_id` = ? AND `payroll_id` = ?", [req.body.new_amount, req.body.other_user, req.body.payroll_id])
                     res.json({
                         result: "success",
                     });
@@ -319,7 +319,10 @@ app.get("/view_uploads", async (req, res) => {
                             }
                         }
                         else {
-                            filelist.push({name: file}); //sends every single persons uploads, then later on group in the client side
+                            var splitted = file.split("_")
+                            if (splitted[0] == req.query.other_user && splitted[1] == req.query.file_type) {
+                                filelist.push({name: file});
+                            }
                         }
                     });
 
@@ -372,7 +375,7 @@ app.get("/view_uploads", async (req, res) => {
 app.get("/view_uploads_single", async (req, res) => {
     console.log("post upload " + JSON.stringify(req.query))
 
-    if (req.session.user != null ) {
+    if (req.session.user != null) {
         if (req.query.other_user != null) {
             const pPool = pool.promise();
 
@@ -418,6 +421,12 @@ app.get("/view_uploads_single", async (req, res) => {
         }
         
     }
+    else {
+        res.json({
+            result: "failure",
+            message: "not logged in"
+        })
+    }
 })
 
 /** FUNCTIONAL REQUIREMENT 11: Downloading of Personal Payroll //TODO: FR12 UI
@@ -442,7 +451,7 @@ app.get("/download_payroll", async (req, res) => {
                 if (rows1[0].access_type == 2) {
                     const [rows2, fields2] = await pPool.execute("SELECT * from `payroll` WHERE `account_id` = ? AND `payroll_id` = ?", [req.query.other_user, req.query.payroll_id])
                     
-                    res.setHeader('Content-disposition', 'attachment; filename= payroll' + rows1[0].payroll_id + '.json');
+                    res.setHeader('Content-disposition', 'attachment; filename= payroll' + rows2[0].payroll_id + '.json');
                     res.setHeader('Content-type', 'application/json');
                     res.write(JSON.stringify(rows2), (err) => {
                         res.end();
@@ -691,10 +700,16 @@ else {
  */
 app.get("/logout", (req, res) => {
     //clear all the session stuff here
-    req.session.user = null
-    res.json({
-      result: "success",
+    req.session.destroy((err) => {
+        if (err) {
+            console.log(err);
+        }
+        else {
+            res.redirect("/login")
+        }
+        
     })
+    
   })
 
 export default app;
