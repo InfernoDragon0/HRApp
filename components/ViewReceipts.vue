@@ -61,7 +61,7 @@
     }
 
     const viewReceipt = (record) => {
-        var source = "/server-api/view_uploads_single?file_name=" + record.name
+        var source = "/server-api/view_uploads_single?other_user=yes&file_name=" + record.name
         console.log(source)
         sourceFile.value = source
         visible.value = true
