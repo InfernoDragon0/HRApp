@@ -124,11 +124,10 @@ export default defineComponent({
     })
 
     const logout = async () => {
-      const { data: message } = await useAsyncData("message", () => {
-        return $fetch("/server-api/logout");
-      });
-      router.push("/login");
-      console.log(message);
+      const { data: logout } = await useAsyncData("logout", () => $fetch("/server-api/logout"), {initialCache: false});
+      if ((logout.value as any).result == "success") {
+        router.push("/login")
+      }
     };
 
     const viewAccount = async (data) => {

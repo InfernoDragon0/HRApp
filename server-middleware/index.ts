@@ -711,9 +711,14 @@ app.get("/logout", (req, res) => {
     req.session.destroy((err) => {
         if (err) {
             console.log(err);
+            res.json(
+                {result: "failure"}
+            )
         }
         else {
-            res.redirect("/login")
+            res.json(
+                {result: "success"}
+            )
         }
         
     })
