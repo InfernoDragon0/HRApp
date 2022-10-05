@@ -15,8 +15,8 @@ const MySQLStore = mysqlSession(session)
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+//checkconst __filename = fileURLToPath(import.meta.url);
+const __dirname = path.resolve()//dirname(__filename);
 
 //types, to move away into another file when ready
 export type AccessType = "EMPLOYEE" | "MANAGER" | "HR"
@@ -371,7 +371,7 @@ app.get("/view_uploads", async (req, res) => {
     }
 })
 
-//[GET] /server-api/view_uploads_single {OTHER_USER?: number, FILE_NAME: string} [ACCESS_TYPE >= 0 || ACCESS_TYPE == 2]
+//[GET] /server-api/view_uploads_single {OTHER_USER?: any, FILE_NAME: string} [ACCESS_TYPE >= 0 || ACCESS_TYPE == 2]
 app.get("/view_uploads_single", async (req, res) => {
     console.log("post upload " + JSON.stringify(req.query))
 
@@ -382,12 +382,11 @@ app.get("/view_uploads_single", async (req, res) => {
             //check if you are HR(2)
             const [rows, fields] = await pPool.execute("SELECT * from `accounts` WHERE `account_id` = ?", [req.session.user])
             if (rows[0].access_type == 2) {
-                //TODO: can access others
-                //read everything in the upload file
                 if (fs.existsSync("./uploads/" + req.query.file_name)) {
                     var splitted = (req.query.file_name as string).split("_")
-                    var check = splitted[0] == req.query.other_user
-                    res.sendFile("./uploads/" + req.query.file_name)
+                    res.sendFile(path.join(__dirname,"./uploads/" + req.query.file_name), (err) => {
+                        console.log(err)
+                    })
                 }
                 else {
                     res.json({
@@ -408,9 +407,18 @@ app.get("/view_uploads_single", async (req, res) => {
                     console.log("file exists")
                     var splitted = (req.query.file_name as string).split("_")
                     var check = splitted[0] == req.session.user
-                    res.sendFile(path.join(__dirname,"../../uploads/" + req.query.file_name), (err) => { //TODO: this should only be for dev version? ../../
-                        console.log(err)
-                    })
+                    if (!check) {
+                        res.json({
+                            result: "failure",
+                            message: "incorrect user" //not allowed to view
+                        })
+                    }
+                    else {
+                        res.sendFile(path.join(__dirname,"./uploads/" + req.query.file_name), (err) => {
+                            console.log(err)
+                        })
+                    }
+                    
             }
             else {
                 res.json({

@@ -59,7 +59,7 @@
     }
 
     const downloadButton = async (record) => {
-        var source = "/server-api/view_uploads_single?file_name=" + record.name
+        var source = "/server-api/view_uploads_single?other_user=yes&file_name=" + record.name
 
         var element = document.createElement('a');
         element.setAttribute('href', source);
